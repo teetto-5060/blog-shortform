@@ -3,5 +3,6 @@ uvicorn[standard]==0.30.0
 httpx==0.27.0
 anthropic==0.34.0
 python-multipart==0.0.9
-moviepy==2.1.1
-pillow==10.3.0
+setuptools>=65.0
+moviepy==1.0.3
+pillow==10.4.0
