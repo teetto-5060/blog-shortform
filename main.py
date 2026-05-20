@@ -110,7 +110,7 @@ async def generate_image(prompt: str, out_path: str):
     payload = {
         "model": "gpt-image-1",
         "prompt": prompt[:800] + ". Vertical 9:16, cinematic, vibrant.",
-        "size": "1024x1792",
+        "size": "1024x1536",
         "quality": "low",
         "output_format": "png",
         "n": 1,
