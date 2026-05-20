@@ -58,7 +58,7 @@ def generate_script(raw_text: str) -> dict:
 
 규칙:
 - 총 5개 장면(scene)으로 구성
-- 각 장면: narration(10~15초 분량 텍스트) + image_prompt(DALL-E 3용 영어 프롬프트, 세로형 9:16)
+- 각 장면: narration(한국어, 10~15초 분량) + image_prompt(반드시 영어로만, 50단어 이내, 사람 얼굴/실존인물 제외, 풍경/사물/추상 위주)
 - JSON만 출력, 마크다운 없이
 
 출력 형식:
