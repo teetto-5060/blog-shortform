@@ -108,8 +108,8 @@ async def generate_image(prompt: str, out_path: str):
         "Content-Type": "application/json",
     }
     payload = {
-        "model": "dall-e-3",
-        "prompt": prompt[:800] + ". Vertical 9:16, no people, no faces, cinematic.",
+        "model": "gpt-image-1",
+        "prompt": prompt[:800] + ". Vertical 9:16, cinematic, vibrant.",
         "size": "1024x1792",
         "quality": "standard",
         "n": 1,
