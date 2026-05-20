@@ -116,9 +116,7 @@ async def generate_image(prompt: str, out_path: str):
 
 # ── 5. moviepy 영상 합성 ─────────────────────────────────────
 def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
-    from moviepy.editor import (
-        ImageClip, AudioFileClip, concatenate_videoclips
-    )
+    from moviepy import ImageClip, AudioFileClip, concatenate_videoclips
 
     clips = []
     for i, scene in enumerate(scenes_data):
@@ -130,9 +128,9 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
 
         clip = (
             ImageClip(img_path)
-            .set_duration(duration)
-            .resize((1080, 1920))
-            .set_audio(audio)
+            .with_duration(duration)
+            .resized((1080, 1920))
+            .with_audio(audio)
         )
         clips.append(clip)
 
