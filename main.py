@@ -152,20 +152,13 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
         Path(subtitle_file).write_text(narration, encoding="utf-8")
 
         # 이미지 + 오디오 → 클립 (자막 포함)
-        drawtext = (
-            f"fontfile=/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc:"
-            f"textfile={subtitle_file}:"
-            f"fontsize=36:fontcolor=white:"
-            f"x=(w-text_w)/2:y=h-150:"
-            f"box=1:boxcolor=black@0.6:boxborderw=12:"
-            f"line_spacing=8:fix_bounds=1"
-        )
+        drawtext = None
 
         subprocess.run([
             "ffmpeg", "-y",
             "-loop", "1", "-i", img,
             "-i", audio,
-            "-vf", f"scale=1080:1920,setsar=1,{drawtext}",
+            "-vf", "scale=1080:1920,setsar=1",
             "-c:v", "libx264", "-preset", "fast", "-crf", "23",
             "-c:a", "aac", "-b:a", "128k",
             "-t", str(duration),
