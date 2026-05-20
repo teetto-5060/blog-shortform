@@ -120,7 +120,9 @@ async def generate_image(prompt: str, out_path: str):
             headers=headers,
             json=payload,
         )
-        r.raise_for_status()
+        if r.status_code != 200:
+            error_detail = r.text
+            raise RuntimeError(f"DALL-E 오류 {r.status_code}: {error_detail}")
         image_url = r.json()["data"][0]["url"]
         img_r = await client.get(image_url, timeout=60)
         Path(out_path).write_bytes(img_r.content)
