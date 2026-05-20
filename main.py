@@ -109,7 +109,7 @@ async def generate_image(prompt: str, out_path: str):
     }
     payload = {
         "model": "dall-e-3",
-        "prompt": prompt + ", vertical 9:16 format, cinematic, vibrant",
+        "prompt": prompt[:800] + ". Vertical 9:16, no people, no faces, cinematic.",
         "size": "1024x1792",
         "quality": "standard",
         "n": 1,
