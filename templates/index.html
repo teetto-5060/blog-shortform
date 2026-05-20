@@ -398,7 +398,7 @@ function showError(msg) {
   document.getElementById('progress').style.display = 'none';
   const box = document.getElementById('errorBox');
   box.style.display = 'block';
-  box.textContent = '❌ ' + msg;
+  box.textContent = '❌ ' + (msg || '알 수 없는 오류');
 }
 </script>
 </body>
