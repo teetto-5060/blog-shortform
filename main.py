@@ -153,7 +153,7 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
 
         # 이미지 + 오디오 → 클립 (자막 포함)
         drawtext = (
-            f"fontfile=/usr/share/fonts/truetype/nanum/NanumGothic.ttf:"
+            f"fontfile=/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc:"
             f"textfile={subtitle_file}:"
             f"fontsize=36:fontcolor=white:"
             f"x=(w-text_w)/2:y=h-150:"
