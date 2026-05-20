@@ -346,10 +346,10 @@ async function poll() {
     if (data.done) {
       clearInterval(pollTimer);
       showResult(data);
-    } else if (data.error) {
-      clearInterval(pollTimer);
-      showError(data.step);
-    }
+   } else if (data.error) {
+  clearInterval(pollTimer);
+  showError(data.step || JSON.stringify(data));
+}
   } catch(e) {}
 }
 
@@ -398,7 +398,7 @@ function showError(msg) {
   document.getElementById('progress').style.display = 'none';
   const box = document.getElementById('errorBox');
   box.style.display = 'block';
-  box.textContent = '❌ ' + (msg || '알 수 없는 오류');
+  box.textContent = '❌ ' + (msg || '서버 오류 - Render 로그 확인 필요');
 }
 </script>
 </body>
