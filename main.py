@@ -116,37 +116,32 @@ async def generate_image(prompt: str, out_path: str):
 
 # ── 5. moviepy 영상 합성 ─────────────────────────────────────
 def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
-    from moviepy import ImageClip, AudioFileClip, concatenate_videoclips
+    import subprocess
 
-    clips = []
-    for i, scene in enumerate(scenes_data):
-        img_path = f"{work_dir}/img_{i}.png"
-        audio_path = f"{work_dir}/audio_{i}.mp3"
+    scene_videos = []
+    for i in range(len(scenes_data)):
+        img = f"{work_dir}/img_{i}.png"
+        audio = f"{work_dir}/audio_{i}.mp3"
+        scene_out = f"{work_dir}/scene_{i}.mp4"
+        subprocess.run([
+            "ffmpeg", "-y",
+            "-loop", "1", "-i", img,
+            "-i", audio,
+            "-vf", "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
+            "-c:v", "libx264", "-c:a", "aac",
+            "-shortest", scene_out
+        ], check=True)
+        scene_videos.append(scene_out)
 
-        audio = AudioFileClip(audio_path)
-        duration = audio.duration
+    list_file = f"{work_dir}/list.txt"
+    with open(list_file, "w") as f:
+        for v in scene_videos:
+            f.write(f"file '{v}'\n")
 
-        clip = (
-            ImageClip(img_path)
-            .with_duration(duration)
-            .resized((1080, 1920))
-            .with_audio(audio)
-        )
-        clips.append(clip)
-
-    final = concatenate_videoclips(clips, method="compose")
-    final.write_videofile(
-        out_path,
-        fps=24,
-        codec="libx264",
-        audio_codec="aac",
-        temp_audiofile=f"{work_dir}/temp_audio.m4a",
-        remove_temp=True,
-        logger=None,
-    )
-    final.close()
-    for c in clips:
-        c.close()
+    subprocess.run([
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", list_file, "-c", "copy", out_path
+    ], check=True)
 
 
 # ── 백그라운드 파이프라인 ────────────────────────────────────
