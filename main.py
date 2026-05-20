@@ -57,7 +57,7 @@ def generate_script(raw_text: str) -> dict:
     prompt = f"""아래 블로그 글을 60초짜리 한국어 숏폼 영상 대본으로 만들어줘.
 
 규칙:
-- 총 2개 장면(scene)으로 구성
+- 총 5개 장면(scene)으로 구성
 - 각 장면: narration(한국어, 10~15초 분량) + image_prompt(반드시 영어로만, 50단어 이내, 사람 얼굴/실존인물 제외, 풍경/사물/추상 위주)
 - JSON만 출력, 마크다운 없이
 
