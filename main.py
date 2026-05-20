@@ -15,6 +15,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 app = FastAPI()
+app = FastAPI()
+
+Path("output").mkdir(exist_ok=True)
+
 app.mount("/output", StaticFiles(directory="output"), name="output")
 
 # ── API Keys (환경변수로 주입) ───────────────────────────────
