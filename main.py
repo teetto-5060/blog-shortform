@@ -111,7 +111,8 @@ async def generate_image(prompt: str, out_path: str):
         "model": "gpt-image-1",
         "prompt": prompt[:800] + ". Vertical 9:16, cinematic, vibrant.",
         "size": "1024x1792",
-        "quality": "standard",
+        "quality": "low",
+        "output_format": "png",
         "n": 1,
     }
     async with httpx.AsyncClient(timeout=120) as client:
@@ -123,9 +124,9 @@ async def generate_image(prompt: str, out_path: str):
         if r.status_code != 200:
             error_detail = r.text
             raise RuntimeError(f"DALL-E 오류 {r.status_code}: {error_detail}")
-        image_url = r.json()["data"][0]["url"]
-        img_r = await client.get(image_url, timeout=60)
-        Path(out_path).write_bytes(img_r.content)
+        import base64
+        b64 = r.json()["data"][0]["b64_json"]
+        Path(out_path).write_bytes(base64.b64decode(b64))
 
 
 # ── 5. FFmpeg 영상 합성 ──────────────────────────────────────
