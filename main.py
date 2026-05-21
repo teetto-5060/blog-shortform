@@ -127,7 +127,7 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
             "ffmpeg", "-y",
             "-loop", "1", "-i", img,
             "-i", audio,
-            "-vf", "scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2",
+           "-vf", "scale=480:854:force_original_aspect_ratio=decrease,pad=480:854:(ow-iw)/2:(oh-ih)/2",
             "-c:v", "libx264", "-c:a", "aac",
             "-shortest", scene_out
         ], check=True)
