@@ -124,13 +124,16 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
         audio = f"{work_dir}/audio_{i}.mp3"
         scene_out = f"{work_dir}/scene_{i}.mp4"
         subprocess.run([
-            "ffmpeg", "-y",
-            "-loop", "1", "-i", img,
-            "-i", audio,
-           "-vf", "scale=480:854:force_original_aspect_ratio=decrease,pad=480:854:(ow-iw)/2:(oh-ih)/2",
-            "-c:v", "libx264", "-c:a", "aac",
-            "-shortest", scene_out
-        ], check=True)
+         "ffmpeg", "-y",
+         "-loop", "1", "-i", img,
+         "-i", audio,
+         "-vf", "scale=480:854:force_original_aspect_ratio=decrease,pad=480:854:(ow-iw)/2:(oh-ih)/2",
+         "-c:v", "libx264",
+         "-preset", "ultrafast",
+         "-crf", "28",
+         "-c:a", "aac",
+         "-shortest", scene_out
+   ], check=True)
         scene_videos.append(scene_out)
 
     list_file = f"{work_dir}/list.txt"
