@@ -142,10 +142,14 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
             f.write(f"file '{v}'\n")
 
     subprocess.run([
-        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-        "-i", list_file, "-c", "copy", out_path
-    ], check=True)
-
+    "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+    "-i", list_file,
+    "-c:v", "libx264",
+    "-preset", "ultrafast",
+    "-crf", "28",
+    "-c:a", "aac",
+    out_path
+], check=True)
 
 # ── 백그라운드 파이프라인 ────────────────────────────────────
 async def run_pipeline(job_id: str, url: str):
