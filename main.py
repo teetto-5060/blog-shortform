@@ -140,15 +140,16 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
                 start = j * interval
                 end = start + interval
                 drawtext_filters.append(
-                    f"drawtext=text='{kw}'"
-                    f":fontsize=50"
-                    f":fontcolor=white"
-                    f":borderw=3"
-                    f":bordercolor=black"
-                    f":x=(w-text_w)/2"
-                    f":y=h-100"
-                    f":enable='between(t,{start:.2f},{end:.2f})'"
-                )
+                  f"drawtext=fontfile=/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf"
+                  f":text='{kw}'"
+                  f":fontsize=50"
+                  f":fontcolor=white"
+                  f":borderw=3"
+                  f":bordercolor=black"
+                  f":x=(w-text_w)/2"
+                  f":y=h*0.75"
+                  f":enable='between(t,{start:.2f},{end:.2f})'"
+               )
         
         vf = "scale=480:854:force_original_aspect_ratio=decrease,pad=480:854:(ow-iw)/2:(oh-ih)/2:black"
         if drawtext_filters:
