@@ -130,6 +130,57 @@
   button#startBtn:active { transform: scale(0.97); }
   button#startBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+  /* 자막 옵션 */
+  .subtitle-options {
+    margin-top: 20px;
+  }
+
+  .subtitle-options .option-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .radio-group {
+    display: flex;
+    gap: 10px;
+  }
+
+  .radio-item {
+    flex: 1;
+    background: #0a0a0f;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .radio-item:has(input:checked) {
+    border-color: var(--accent);
+    background: #1a1530;
+  }
+
+  .radio-item input[type=radio] {
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+
+  .radio-item span {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
   /* Progress */
   #progress { display: none; margin-top: 32px; }
 
@@ -247,159 +298,4 @@
     font-size: 11px;
     color: var(--muted);
     display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .step-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
-  .step-pill.active .dot { background: var(--accent); }
-  .step-pill.active { color: var(--text); }
-</style>
-</head>
-<body>
-
-<header>
-  <div class="badge">AI-Powered</div>
-  <h1>블로그 URL → <span>숏폼</span> <em>영상</em></h1>
-  <p class="sub">티스토리 · 네이버 블로그 · 브런치 URL 하나로<br>60초짜리 세로형 mp4를 자동 생성합니다</p>
-</header>
-
-<div class="card">
-  <label>블로그 URL</label>
-  <div class="input-row">
-    <input type="url" id="urlInput" placeholder="https://blog.naver.com/..." />
-    <button id="startBtn" onclick="startJob()">▶ 생성</button>
-  </div>
-
-  <div id="errorBox"></div>
-
-  <div id="progress">
-    <div class="step-label">
-      <span id="stepText">준비 중...</span>
-      <span id="pctText">0%</span>
-    </div>
-    <div class="bar-bg">
-      <div class="bar-fill" id="barFill"></div>
-    </div>
-    <div class="scenes-grid" id="scenesGrid">
-      <div class="scene-dot">1</div>
-      <div class="scene-dot">2</div>
-      <div class="scene-dot">3</div>
-      <div class="scene-dot">4</div>
-      <div class="scene-dot">5</div>
-    </div>
-    <div class="steps-legend">
-      <div class="step-pill" id="pill-crawl"><div class="dot"></div>크롤링</div>
-      <div class="step-pill" id="pill-script"><div class="dot"></div>대본</div>
-      <div class="step-pill" id="pill-media"><div class="dot"></div>음성·이미지</div>
-      <div class="step-pill" id="pill-ffmpeg"><div class="dot"></div>영상합성</div>
-    </div>
-  </div>
-
-  <div id="result">
-    <div class="result-title" id="videoTitle"></div>
-    <div class="result-sub">✅ 영상이 완성됐어요!</div>
-    <video id="videoPreview" controls playsinline></video>
-    <a id="dlLink" class="dl-btn" download="shortform.mp4">⬇ mp4 다운로드</a>
-  </div>
-</div>
-
-<script>
-let pollTimer = null;
-let currentJob = null;
-
-async function startJob() {
-  const url = document.getElementById('urlInput').value.trim();
-  if (!url) return;
-
-  document.getElementById('startBtn').disabled = true;
-  document.getElementById('errorBox').style.display = 'none';
-  document.getElementById('result').style.display = 'none';
-  document.getElementById('progress').style.display = 'block';
-  setBar(0, '시작 중...');
-  resetDots();
-
-  try {
-    const res = await fetch('/generate', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({url})
-    });
-    const data = await res.json();
-    currentJob = data.job_id;
-    pollTimer = setInterval(poll, 2000);
-  } catch(e) {
-    showError('서버 연결 실패: ' + e.message);
-  }
-}
-
-async function poll() {
-  if (!currentJob) return;
-  try {
-    const res = await fetch('/status/' + currentJob);
-    const data = await res.json();
-
-    setBar(data.pct || 0, data.step || '');
-    updatePills(data.step || '');
-    updateDots(data.pct || 0);
-
-    if (data.done) {
-      clearInterval(pollTimer);
-      showResult(data);
-   } else if (data.error) {
-  clearInterval(pollTimer);
-  showError(data.step || JSON.stringify(data));
-}
-  } catch(e) {}
-}
-
-function setBar(pct, text) {
-  document.getElementById('barFill').style.width = pct + '%';
-  document.getElementById('stepText').textContent = text;
-  document.getElementById('pctText').textContent = pct + '%';
-}
-
-function updatePills(step) {
-  const map = {
-    'pill-crawl': '크롤링',
-    'pill-script': '대본',
-    'pill-media': '음성',
-    'pill-ffmpeg': 'FFmpeg',
-  };
-  Object.entries(map).forEach(([id, keyword]) => {
-    document.getElementById(id).classList.toggle('active', step.includes(keyword));
-  });
-}
-
-function updateDots(pct) {
-  const dots = document.querySelectorAll('.scene-dot');
-  const completed = Math.floor((pct - 20) / 55 * 5);
-  dots.forEach((d, i) => {
-    d.classList.toggle('done', i < completed);
-  });
-}
-
-function resetDots() {
-  document.querySelectorAll('.scene-dot').forEach(d => d.classList.remove('done'));
-}
-
-function showResult(data) {
-  document.getElementById('progress').style.display = 'none';
-  document.getElementById('result').style.display = 'block';
-  document.getElementById('startBtn').disabled = false;
-  if (data.title) document.getElementById('videoTitle').textContent = data.title;
-  const url = data.file;
-  document.getElementById('videoPreview').src = url;
-  document.getElementById('dlLink').href = '/download/' + currentJob;
-}
-
-function showError(msg) {
-  document.getElementById('startBtn').disabled = false;
-  document.getElementById('progress').style.display = 'none';
-  const box = document.getElementById('errorBox');
-  box.style.display = 'block';
-  box.textContent = '❌ ' + (msg || '서버 오류 - Render 로그 확인 필요');
-}
-</script>
-</body>
-</html>
+    align-items: cente
