@@ -138,8 +138,8 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
 
     list_file = f"{work_dir}/list.txt"
     with open(list_file, "w") as f:
-        for v in scene_videos:
-            f.write(f"file '{v}'\n")
+      for i in range(len(scenes_data)):
+          f.write(f"file 'scene_{i}.mp4'\n")
 
     subprocess.run([
     "ffmpeg", "-y", "-f", "concat", "-safe", "0",
