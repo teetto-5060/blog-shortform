@@ -49,14 +49,14 @@ def generate_script(raw_text: str) -> dict:
 
 규칙:
 - 총 5개 장면(scene)으로 구성
-- 각 장면: narration(한국어, 10~15초 분량) + image_prompt(반드시 영어로만, 50단어 이내, 사람 얼굴/실존인물 제외, 풍경/사물/추상 위주, NO KOREAN, NO TEXT IN IMAGE)
+- 각 장면: narration(한국어, 10~15초 분량) + image_prompt(반드시 영어로만, 50단어 이내, 사람 얼굴/실존인물 제외, 풍경/사물/추상 위주, NO Korean text) + keywords(나레이션 핵심 키워드 2~3개, 한국어)
 - JSON만 출력, 마크다운 없이
 
 출력 형식:
 {{
   "title": "영상 제목",
   "scenes": [
-    {{"narration": "...", "image_prompt": "..."}},
+    {{"narration": "...", "image_prompt": "...", "keywords": ["키워드1", "키워드2"]}},
     ...
   ]
 }}
@@ -119,37 +119,68 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
     import subprocess
 
     scene_videos = []
-    for i in range(len(scenes_data)):
+    for i, scene in enumerate(scenes_data):
         img = f"{work_dir}/img_{i}.png"
         audio = f"{work_dir}/audio_{i}.mp3"
         scene_out = f"{work_dir}/scene_{i}.mp4"
+        
+        # 오디오 길이 확인
+        probe = subprocess.run([
+            "ffprobe", "-v", "error", "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1", audio
+        ], capture_output=True, text=True)
+        duration = float(probe.stdout.strip())
+        
+        # 키워드 자막 필터 생성
+        keywords = scene.get("keywords", [])
+        drawtext_filters = []
+        if keywords:
+            interval = duration / len(keywords)
+            for j, kw in enumerate(keywords):
+                start = j * interval
+                end = start + interval
+                drawtext_filters.append(
+                    f"drawtext=text='{kw}'"
+                    f":fontsize=50"
+                    f":fontcolor=white"
+                    f":borderw=3"
+                    f":bordercolor=black"
+                    f":x=(w-text_w)/2"
+                    f":y=h-100"
+                    f":enable='between(t,{start:.2f},{end:.2f})'"
+                )
+        
+        vf = "scale=480:854:force_original_aspect_ratio=decrease,pad=480:854:(ow-iw)/2:(oh-ih)/2:black"
+        if drawtext_filters:
+            vf += "," + ",".join(drawtext_filters)
+        
         subprocess.run([
-         "ffmpeg", "-y",
-         "-loop", "1", "-i", img,
-         "-i", audio,
-         "-vf", "scale=480:854:force_original_aspect_ratio=decrease,pad=480:854:(ow-iw)/2:(oh-ih)/2",
-         "-c:v", "libx264",
-         "-preset", "ultrafast",
-         "-crf", "28",
-         "-c:a", "aac",
-         "-shortest", scene_out
-   ], check=True)
+            "ffmpeg", "-y",
+            "-loop", "1", "-i", img,
+            "-i", audio,
+            "-vf", vf,
+            "-c:v", "libx264",
+            "-preset", "ultrafast",
+            "-crf", "28",
+            "-c:a", "aac",
+            "-shortest", scene_out
+        ], check=True)
         scene_videos.append(scene_out)
 
     list_file = f"{work_dir}/list.txt"
     with open(list_file, "w") as f:
-      for i in range(len(scenes_data)):
-          f.write(f"file 'scene_{i}.mp4'\n")
+        for i in range(len(scenes_data)):
+            f.write(f"file 'scene_{i}.mp4'\n")
 
     subprocess.run([
-    "ffmpeg", "-y", "-f", "concat", "-safe", "0",
-    "-i", list_file,
-    "-c:v", "libx264",
-    "-preset", "ultrafast",
-    "-crf", "28",
-    "-c:a", "aac",
-    out_path
-], check=True)
+        "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        "-i", list_file,
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "28",
+        "-c:a", "aac",
+        out_path
+    ], check=True)
 
 # ── 백그라운드 파이프라인 ────────────────────────────────────
 async def run_pipeline(job_id: str, url: str):
