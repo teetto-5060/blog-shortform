@@ -32,14 +32,25 @@ class GenerateRequest(BaseModel):
 
 # ── 1. 블로그 크롤링 ─────────────────────────────────────────
 async def fetch_blog_text(url: str) -> str:
-    headers = {"User-Agent": "Mozilla/5.0"}
-    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-        r = await client.get(url, headers=headers)
-        html = r.text
-    text = re.sub(r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL)
-    text = re.sub(r"<style[^>]*>.*?</style>", "", text, flags=re.DOTALL)
-    text = re.sub(r"<[^>]+>", " ", text)
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8",
+        "Connection": "keep-alive",
+    }
+
+    # Jina AI Reader로 크롤링 (JS 렌더링 지원)
+    jina_url = f"https://r.jina.ai/{url}"
+
+    async with httpx.AsyncClient(timeout=30, follow_redirects=True) as client:
+        r = await client.get(jina_url, headers=headers)
+        text = r.text
+
     text = re.sub(r"\s+", " ", text).strip()
+
+    if len(text) < 200:
+        raise RuntimeError("블로그 내용을 읽을 수 없습니다. URL을 확인해주세요.")
+
     return text[:8000]
 
 
