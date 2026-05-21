@@ -49,7 +49,7 @@ def generate_script(raw_text: str) -> dict:
 
 규칙:
 - 총 5개 장면(scene)으로 구성
-- 각 장면: narration(한국어, 10~15초 분량) + image_prompt(반드시 영어로만, 50단어 이내, 사람 얼굴/실존인물 제외, 풍경/사물/추상 위주)
+- 각 장면: narration(한국어, 10~15초 분량) + image_prompt(반드시 영어로만, 50단어 이내, 사람 얼굴/실존인물 제외, 풍경/사물/추상 위주, NO KOREAN, NO TEXT IN IMAGE)
 - JSON만 출력, 마크다운 없이
 
 출력 형식:
@@ -97,7 +97,7 @@ async def generate_image(prompt: str, out_path: str):
     }
     payload = {
         "model": "gpt-image-1",
-        "prompt": prompt[:800] + ". Vertical 9:16, cinematic, vibrant, no people.",
+        "prompt": prompt[:800] + ". Vertical 9:16, cinematic, vibrant, no people, no Korean.",
         "size": "1024x1536",
         "quality": "low",
         "n": 1,
