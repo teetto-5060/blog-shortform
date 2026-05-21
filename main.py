@@ -27,6 +27,7 @@ jobs: dict = {}
 
 class GenerateRequest(BaseModel):
     url: str
+    subtitle: str = "none"  # "none" 또는 "keyword"
 
 
 # ── 1. 블로그 크롤링 ─────────────────────────────────────────
@@ -97,7 +98,7 @@ async def generate_image(prompt: str, out_path: str):
     }
     payload = {
         "model": "gpt-image-1",
-        "prompt": prompt[:800] + ". Vertical 9:16, cinematic, vibrant, no people, no Korean.",
+        "prompt": prompt[:800] + ". Vertical 9:16, cinematic, vibrant, no people, no Korean text.",
         "size": "1024x1536",
         "quality": "low",
         "n": 1,
@@ -114,8 +115,8 @@ async def generate_image(prompt: str, out_path: str):
         Path(out_path).write_bytes(base64.b64decode(b64))
 
 
-# ── 5. moviepy 영상 합성 ─────────────────────────────────────
-def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
+# ── 5. FFmpeg 영상 합성 ──────────────────────────────────────
+def merge_to_video(scenes_data: list, work_dir: str, out_path: str, subtitle: str = "none"):
     import subprocess
 
     scene_videos = []
@@ -123,38 +124,40 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
         img = f"{work_dir}/img_{i}.png"
         audio = f"{work_dir}/audio_{i}.mp3"
         scene_out = f"{work_dir}/scene_{i}.mp4"
-        
+
         # 오디오 길이 확인
         probe = subprocess.run([
             "ffprobe", "-v", "error", "-show_entries", "format=duration",
             "-of", "default=noprint_wrappers=1:nokey=1", audio
         ], capture_output=True, text=True)
         duration = float(probe.stdout.strip())
-        
-        # 키워드 자막 필터 생성
-        keywords = scene.get("keywords", [])
-        drawtext_filters = []
-        if keywords:
-            interval = duration / len(keywords)
-            for j, kw in enumerate(keywords):
-                start = j * interval
-                end = start + interval
-                drawtext_filters.append(
-                  f"drawtext=fontfile=/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf"
-                  f":text='{kw}'"
-                  f":fontsize=50"
-                  f":fontcolor=white"
-                  f":borderw=3"
-                  f":bordercolor=black"
-                  f":x=(w-text_w)/2"
-                  f":y=h*0.75"
-                  f":enable='between(t,{start:.2f},{end:.2f})'"
-               )
-        
+
+        # 기본 영상 필터
         vf = "scale=480:854:force_original_aspect_ratio=decrease,pad=480:854:(ow-iw)/2:(oh-ih)/2:black"
-        if drawtext_filters:
-            vf += "," + ",".join(drawtext_filters)
-        
+
+        # 키워드 자막 필터 (subtitle == "keyword"일 때만)
+        if subtitle == "keyword":
+            keywords = scene.get("keywords", [])
+            drawtext_filters = []
+            if keywords:
+                interval = duration / len(keywords)
+                for j, kw in enumerate(keywords):
+                    start = j * interval
+                    end = start + interval
+                    drawtext_filters.append(
+                        f"drawtext=fontfile=/usr/share/fonts/truetype/nanum/NanumGothicBold.ttf"
+                        f":text='{kw}'"
+                        f":fontsize=50"
+                        f":fontcolor=white"
+                        f":borderw=3"
+                        f":bordercolor=black"
+                        f":x=(w-text_w)/2"
+                        f":y=h*0.75"
+                        f":enable='between(t,{start:.2f},{end:.2f})'"
+                    )
+            if drawtext_filters:
+                vf += "," + ",".join(drawtext_filters)
+
         subprocess.run([
             "ffmpeg", "-y",
             "-loop", "1", "-i", img,
@@ -183,8 +186,9 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str):
         out_path
     ], check=True)
 
+
 # ── 백그라운드 파이프라인 ────────────────────────────────────
-async def run_pipeline(job_id: str, url: str):
+async def run_pipeline(job_id: str, url: str, subtitle: str = "none"):
     work_dir = f"output/{job_id}"
     Path(work_dir).mkdir(parents=True, exist_ok=True)
 
@@ -212,7 +216,7 @@ async def run_pipeline(job_id: str, url: str):
         update("영상 합성 중...", 80)
         out_path = f"{work_dir}/result.mp4"
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, merge_to_video, scenes, work_dir, out_path)
+        await loop.run_in_executor(None, merge_to_video, scenes, work_dir, out_path, subtitle)
 
         jobs[job_id].update({
             "step": "완료",
@@ -230,7 +234,7 @@ async def run_pipeline(job_id: str, url: str):
 async def generate(req: GenerateRequest, background_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())[:8]
     jobs[job_id] = {"step": "시작...", "pct": 0, "done": False}
-    background_tasks.add_task(run_pipeline, job_id, req.url)
+    background_tasks.add_task(run_pipeline, job_id, req.url, req.subtitle)
     return {"job_id": job_id}
 
 
