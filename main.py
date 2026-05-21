@@ -20,14 +20,14 @@ app.mount("/output", StaticFiles(directory="output"), name="output")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "pNInz6obpgDQGcFmaJgB")
 
 jobs: dict = {}
 
 
 class GenerateRequest(BaseModel):
     url: str
-    subtitle: str = "none"  # "none" 또는 "keyword"
+    voice: str = "ksaI0TCD9BstzEzlxj4q"  # 기본: 설기
+    subtitle: str = "none"
 
 
 # ── 1. 블로그 크롤링 ─────────────────────────────────────────
@@ -76,8 +76,8 @@ def generate_script(raw_text: str) -> dict:
 
 
 # ── 3. ElevenLabs TTS ────────────────────────────────────────
-async def text_to_speech(text: str, out_path: str):
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE_ID}"
+async def text_to_speech(text: str, out_path: str, voice_id: str):
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
     headers = {"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"}
     payload = {
         "text": text,
@@ -188,7 +188,7 @@ def merge_to_video(scenes_data: list, work_dir: str, out_path: str, subtitle: st
 
 
 # ── 백그라운드 파이프라인 ────────────────────────────────────
-async def run_pipeline(job_id: str, url: str, subtitle: str = "none"):
+async def run_pipeline(job_id: str, url: str, voice: str, subtitle: str = "none"):
     work_dir = f"output/{job_id}"
     Path(work_dir).mkdir(parents=True, exist_ok=True)
 
@@ -209,7 +209,7 @@ async def run_pipeline(job_id: str, url: str, subtitle: str = "none"):
             pct = 20 + int((i / total) * 55)
             update(f"장면 {i+1}/{total} — 음성·이미지 생성 중...", pct)
             await asyncio.gather(
-                text_to_speech(scene["narration"], f"{work_dir}/audio_{i}.mp3"),
+                text_to_speech(scene["narration"], f"{work_dir}/audio_{i}.mp3", voice),
                 generate_image(scene["image_prompt"], f"{work_dir}/img_{i}.png"),
             )
 
@@ -234,7 +234,7 @@ async def run_pipeline(job_id: str, url: str, subtitle: str = "none"):
 async def generate(req: GenerateRequest, background_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())[:8]
     jobs[job_id] = {"step": "시작...", "pct": 0, "done": False}
-    background_tasks.add_task(run_pipeline, job_id, req.url, req.subtitle)
+    background_tasks.add_task(run_pipeline, job_id, req.url, req.voice, req.subtitle)
     return {"job_id": job_id}
 
 
